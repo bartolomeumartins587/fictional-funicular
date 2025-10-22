@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>WellHome — Sistema Completo (imediato: imagens)</title>
+<style>
+  :root{
+    --bg:#f4f7f9; --card:#fff; --primary:#0b6b8a; --accent:#1492a6; --danger:#e11d48; --ok:#16a34a; --muted:#6b7280;
+  }
+  *{box-sizing:border-box;font-family:Inter,Segoe UI,Arial,sans-serif}
+  body{margin:0;background:linear-gradient(180deg,#eef7f8 0%, #ffffff 100%);color:#111}
+  header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;position:sticky;top:0;z-index:40}
+  header h1{margin:0;font-size:18px}
+  .user-area{display:flex;gap:8px;align-items:center}
+  .btn{background:#fff;color:var(--primary);border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+  .btn.small{padding:6px 8px;font-size:13px}
+  nav.topnav{display:flex;gap:8px;padding:10px 20px;background:rgba(255,255,255,0.9);flex-wrap:wrap;align-items:center;position:sticky;top:56px;z-index:35;border-bottom:1px solid rgba(0,0,0,0.04)}
+  .nav-btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;background:#fff}
+  .nav-btn.active{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;border:none;box-shadow:0 8px 20px rgba(11,104,138,0.14)}
+  .container{max-width:1200px;margin:18px auto;padding:0 18px}
+  .view{background:var(--card);padding:14px;border-radius:12px;margin-bottom:12px;box-shadow:0 8px 24px rgba(15,23,42,0.04)}
+  .view.hidden{display:none}
+  .view-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px; gap:12px}
+  .view-actions{display:flex;gap:8px;align-items:center}
+  .cards{display:flex;gap:12px;flex-wrap:wrap}
+  .card{flex:1;min-width:160px;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#f8fbfb);text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+  .card .title{color:var(--muted);font-size:13px}
+  .card .value{font-weight:700;font-size:20px;margin-top:6px}
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+  input, select, textarea{padding:8px;border-radius:8px;border:1px solid #e6eef0}
+  label{display:block;margin-top:6px;color:var(--muted);font-size:13px}
+  table{width:100%;border-collapse:collapse;margin-top:8px;background:transparent}
+  th,td{padding:10px;border-bottom:1px solid #eef2f4;text-align:left;vertical-align:middle}
+  th{background:#fbfdff;color:var(--muted);font-weight:600}
+  .thumbnail{width:64px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #eee;cursor:pointer}
+  .small-muted{color:var(--muted);font-size:13px}
+  .modal{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:flex;align-items:center;justify-content:center;z-index:100;visibility:hidden;opacity:0;transition:opacity .15s}
+  .modal.open{visibility:visible;opacity:1}
+  .modal-body{background:#fff;padding:18px;border-radius:12px;min-width:320px;max-width:920px;position:relative;max-height:85vh;overflow:auto}
+  .close-modal{position:absolute;right:10px;top:8px;border:none;background:transparent;font-size:18px;cursor:pointer}
+  .img-large{max-width:100%;height:auto;border-radius:8px}
+  .alert{background:#fff3cd;border-left:4px solid #ffd54f;padding:10px;border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .chart-wrap{background:#fff;padding:12px;border-radius:8px}
+  footer{padding:12px;text-align:center;color:var(--muted);font-size:13px;margin-top:8px}
+  .hidden{display:none}
+  .muted{color:var(--muted)}
+  @media (max-width:900px){ .nav-btn{padding:6px 8px;font-size:13px} .thumbnail{width:48px;height:36px} }
+  #login-box{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:white;padding:22px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.15);z-index:120;width:360px}
+  #login-box h2{margin-top:0}
+  #login-box input{width:100%;margin:8px 0;padding:10px;border-radius:8px;border:1px solid #e6eef0}
+</style>
+</head>
+<body>
+
+<!-- Login box -->
+<div id="login-box">
+  <h2>Entrar no Sistema</h2>
+  <input id="login-username" placeholder="Usuário (admin / vendedor)">
+  <input id="login-password" placeholder="Senha (admin123 / vend123)" type="password">
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button id="login-btn" class="btn" style="flex:1">Entrar</button>
+    <button id="demo-reset" class="btn small" title="Reset DB de teste" style="background:#f8d7da;color:var(--danger)">Reset</button>
+  </div>
+  <p id="login-error" style="color:var(--danger);margin-top:8px"></p>
+  <p class="small-muted" style="margin-top:8px">Teste: <strong>admin/admin123</strong> | <strong>vendedor/vend123</strong></p>
+</div>
+
+<header>
+  <h1>WellHome — Gestão</h1>
+  <div class="user-area">
+    <span id="welcome" style="color:#fff;font-weight:600"></span>
+    <button id="open-login" class="btn small" style="display:none">Login</button>
+    <button id="logout-btn" class="btn small" style="display:none">Logout</button>
+  </div>
+</header>
+
+<nav id="topnav" class="topnav hidden">
+  <div class="container" style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="nav-btn active" data-view="dashboard">Painel de Controlo</button>
+    <button class="nav-btn" data-view="funcionarios">Funcionários</button>
+    <button class="nav-btn" data-view="clientes">Clientes</button>
+    <button class="nav-btn" data-view="produtos">Produtos</button>
+    <button class="nav-btn" data-view="vendas">Efetuar Vendas</button>
+    <button class="nav-btn" data-view="orcamentos">Orçamentos</button>
+    <button class="nav-btn" data-view="relatorios">Relatórios Gráficos</button>
+    <button class="nav-btn" data-view="pagamentos">Gerir Pagamentos</button>
+  </div>
+</nav>
+
+<main class="container">
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="view">
+    <div class="view-header">
+      <h2>Painel de Controlo</h2>
+      <div class="view-actions">
+        <button id="export-csv" class="btn small">Exportar Vendas (CSV)</button>
+        <button id="btn-reset-db" class="btn small" style="background:#ffe5e5;color:var(--danger)">Reset DB</button>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card"><div class="title">Clientes</div><div id="count-clientes" class="value">0</div></div>
+      <div class="card"><div class="title">Produtos</div><div id="count-produtos" class="value">0</div></div>
+      <div class="card"><div class="title">Vendas</div><div id="count-vendas" class="value">0</div></div>
+      <div class="card"><div class="title">Orçamentos</div><div id="count-orcamentos" class="value">0</div></div>
+    </div>
+
+    <div id="min-stock-alerts" style="margin-top:12px"></div>
+
+    <div style="margin-top:12px" class="chart-wrap">
+      <canvas id="salesChart" width="900" height="240"></canvas>
+    </div>
+
+    <div style="margin-top:12px" id="dashboard-details"></div>
+  </section>
+
+  <!-- FUNCIONÁRIOS -->
+  <section id="funcionarios" class="view hidden">
+    <div class="view-header">
+      <h2>Funcionários</h2>
+      <div class="view-actions">
+        <button class="btn small back-btn">⬅ Voltar</button>
+        <button id="btn-add-func" class="btn small">Adicionar Funcionário</button>
+      </div>
+    </div>
+    <div class="toolbar"><input id="search-func" placeholder="Pesquisar funcionários..."></div>
+    <table id="table-func"><thead><tr><th>Foto</th><th>Nome</th><th>Função</th><th>Usuário</th><th>Total Vendido (Kz)</th><th>Ações</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <!-- CLIENTES -->
+  <section id="clientes" class="view hidden">
+    <div class="view-header">
+      <h2>Clientes</h2>
+      <div class="view-actions">
+        <button class="btn small back-btn">⬅ Voltar</button>
+        <button id="btn-add-cliente" class="btn small">Adicionar Cliente</button>
+      </div>
+    </div>
+    <div class="toolbar"><input id="search-cliente" placeholder="Pesquisar clientes por nome, telefone, email..."></div>
+    <table id="table-clientes"><thead><tr><th>Foto</th><th>Nome</th><th>Telefone</th><th>Email</th><th>NIF</th><th>Endereço</th><th>Ações</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <!-- PRODUTOS -->
+  <section id="produtos" class="view hidden">
+    <div class="view-header">
+      <h2>Produtos</h2>
+      <div class="view-actions">
+        <button class="btn small back-btn">⬅ Voltar</button>
+        <button id="btn-add-prod" class="btn small">Adicionar Produto</button>
+      </div>
+    </div>
+    <div class="toolbar"><input id="search-prod" placeholder="Pesquisar produtos..."></div>
+    <table id="table-produtos"><thead><tr><th>Foto</th><th>Código</th><th>Nome</th><th>Preço (Kz)</th><th>Stock</th><th>Stock Mínimo</th><th>Ações</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <!-- VENDAS -->
+  <section id="vendas" class="view hidden">
+    <div class="view-header">
+      <h2>Vendas</h2>
+      <div class="view-actions">
+        <button class="btn small back-btn">⬅ Voltar</button>
+        <button id="btn-new-sale" class="btn small">Nova Venda / Orçamento</button>
+      </div>
+    </div>
+    <div class="toolbar"><input id="search-venda" placeholder="Pesquisar vendas por cliente ou produto..."></div>
+    <table id="table-vendas"><thead><tr><th>ID</th><th>Funcionário</th><th>Cliente</th><th>Itens</th><th>Total (Kz)</th><th>Pago</th><th>Data</th><th>Ações</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <!-- ORÇAMENTOS -->
+  <section id="orcamentos" class="view hidden">
+    <div class="view-header">
+      <h2>Orçamentos</h2>
+      <div class="view-actions">
+        <button class="btn small back-btn">⬅ Voltar</button>
+      </div>
+    </div>
+    <div class="toolbar"><input id="search-quote" placeholder="Pesquisar orçamentos..."></div>
+    <table id="table-orcamentos"><thead><tr><th>ID</th><th>Funcionário</th><th>Função (visível ao admin)</th><th>Cliente</th><th>Itens</th><th>Total (Kz)</th><th>Data</th><th>Ações</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <!-- RELATÓRIOS -->
+  <section id="relatorios" class="view hidden">
+    <div class="view-header">
+      <h2>Relatórios e Gráficos</h2>
+      <div class="view-actions">
+        <button class="btn small back-btn">⬅ Voltar</button>
+        <select id="report-employee"><option value="">Todos funcionários</option></select>
+      </div>
+    </div>
+    <div id="report-list"></div>
+  </section>
+
+  <!-- PAGAMENTOS -->
+  <section id="pagamentos" class="view hidden">
+    <div class="view-header">
+      <h2>Gerir Pagamentos</h2>
+      <div class="view-actions">
+        <button class="btn small back-btn">⬅ Voltar</button>
+      </div>
+    </div>
+    <div id="payments-list"></div>
+  </section>
+</main>
+
+<!-- Modal -->
+<div id="modal" class="modal"><div class="modal-body"><button class="close-modal">✕</button><div id="modal-content"></div></div></div>
+
+<footer>Protótipo — Frontend (HTML/CSS/JS). Dados em localStorage (wellhome_db_v2).</footer>
+
+<script>
+/* =========================
+   WellHome — Final (immediate image update)
+   localStorage key: wellhome_db_v2
+   ========================= */
+
+/* ---------- DB & defaults ---------- */
+const DB_KEY = 'wellhome_db_v2';
+
+const DEFAULT_DB = {
+  users:[
+    { id:'u1', name:'Administrador', username:'admin', pass:'admin123', role:'admin' },
+    { id:'u2', name:'Vendedor', username:'vendedor', pass:'vend123', role:'vendedor' }
+  ],
+  funcionarios:[
+    { id:'f1', name:'Administrador', role:'admin', username:'admin', pass:'admin123', photo:null },
+    { id:'f2', name:'Vendedor', role:'vendedor', username:'vendedor', pass:'vend123', photo:null }
+  ],
+  clientes:[
+    { id:'c1', name:'Maria Sousa', phone:'923000000', email:'maria@exemplo.com', nif:'123456789', address:'Talatona', photo:null }
+  ],
+  produtos:[
+    { id:'p1', code:'PR-001', name:'Apartamento T1', price:500000, stock:3, minStock:1, photo:null },
+    { id:'p2', code:'PR-002', name:'Apartamento T2', price:800000, stock:1, minStock:2, photo:null }
+  ],
+  vendas:[],
+  orcamentos:[]
+};
+
+function loadDB(){
+  const raw = localStorage.getItem(DB_KEY);
+  if(!raw){
+    localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_DB));
+    return JSON.parse(JSON.stringify(DEFAULT_DB));
+  }
+  try { return JSON.parse(raw); }
+  catch(e){
+    console.error('DB corrupt. Resetting to defaults.', e);
+    localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_DB));
+    return JSON.parse(JSON.stringify(DEFAULT_DB));
+  }
+}
+function saveDB_local(db){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+/* ---------- State ---------- */
+let DB = loadDB();
+let currentUser = null;
+
+/* ---------- Elements ---------- */
+const loginBox = document.getElementById('login-box');
+const loginBtn = document.getElementById('login-btn');
+const demoReset = document.getElementById('demo-reset');
+const logoutBtn = document.getElementById('logout-btn');
+const welcomeSpan = document.getElementById('welcome');
+const topnav = document.getElementById('topnav');
+const modalEl = document.getElementById('modal');
+const modalContent = document.getElementById('modal-content');
+
+/* ---------- Init ---------- */
+function init(){
+  // nav buttons
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.addEventListener('click', ()=> {
+      document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      showView(b.dataset.view);
+    });
+  });
+
+  // login flow
+  loginBtn.addEventListener('click', doLogin);
+  demoReset.addEventListener('click', ()=> { if(confirm('Resetar DB de teste?')) { localStorage.removeItem(DB_KEY); DB = loadDB(); alert('DB reiniciado.'); renderAll(); }});
+
+  // header
+  document.getElementById('open-login').addEventListener('click', ()=> loginBox.style.display='block');
+  logoutBtn.addEventListener('click', doLogout);
+
+  // modal controls
+  document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', closeModal));
+  document.querySelectorAll('.back-btn').forEach(b => b.addEventListener('click', ()=> showView('dashboard')));
+
+  // CRUD buttons
+  document.getElementById('btn-add-func').addEventListener('click', ()=> openFuncionarioModal());
+  document.getElementById('btn-add-cliente').addEventListener('click', ()=> openClienteModal());
+  document.getElementById('btn-add-prod').addEventListener('click', ()=> openProdutoModal());
+  document.getElementById('btn-new-sale').addEventListener('click', ()=> openSaleChoiceModal());
+  document.getElementById('btn-reset-db').addEventListener('click', ()=> { if(confirm('Resetar DB para estado inicial?')){ localStorage.removeItem(DB_KEY); DB = loadDB(); renderAll(); alert('DB reiniciado'); }});
+  document.getElementById('export-csv').addEventListener('click', exportSalesCSV);
+
+  // search inputs
+  document.getElementById('search-func').addEventListener('input', renderFuncionarios);
+  document.getElementById('search-cliente').addEventListener('input', renderClientes);
+  document.getElementById('search-prod').addEventListener('input', renderProdutos);
+  document.getElementById('search-venda').addEventListener('input', renderVendas);
+  document.getElementById('search-quote').addEventListener('input', renderOrcamentos);
+
+  // restore session
+  const saved = sessionStorage.getItem('wellhome_user');
+  if(saved){
+    currentUser = JSON.parse(saved);
+    onLogin();
+  } else {
+    showOnlyLogin();
+  }
+
+  // sync across tabs
+  window.addEventListener('storage', (ev)=>{ if(ev.key === DB_KEY || ev.key === DB_KEY + '_sync'){ DB = loadDB(); renderAll(); } });
+
+  renderAll();
+}
+
+/* ---------- UI helpers ---------- */
+function showOnlyLogin(){
+  loginBox.style.display = 'block';
+  topnav.style.display = 'none';
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  welcomeSpan.textContent = '';
+  logoutBtn.style.display = 'none';
+  document.getElementById('open-login').style.display = 'none';
+}
+function onLogin(){
+  loginBox.style.display = 'none';
+  welcomeSpan.textContent = `Olá, ${currentUser.name} (${currentUser.role})`;
+  document.getElementById('open-login').style.display = 'none';
+  logoutBtn.style.display = 'inline-block';
+  topnav.style.display = 'flex';
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    const view = b.dataset.view;
+    if(currentUser.role !== 'admin' && (view === 'funcionarios' || view === 'pagamentos' || view === 'relatorios')){
+      b.style.display = 'none';
+    } else { b.style.display = 'inline-block'; }
+  });
+  renderAll();
+  showView('dashboard');
+}
+function showView(id){
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  const el = document.getElementById(id);
+  if(el) el.classList.remove('hidden');
+  if(!currentUser) { showOnlyLogin(); return; }
+  if(id === 'dashboard') renderDashboard();
+  if(id === 'funcionarios') renderFuncionarios();
+  if(id === 'clientes') renderClientes();
+  if(id === 'produtos') renderProdutos();
+  if(id === 'vendas') renderVendas();
+  if(id === 'orcamentos') renderOrcamentos();
+  if(id === 'relatorios') renderRelatorios();
+  if(id === 'pagamentos') renderPayments();
+}
+
+/* ---------- Modals ---------- */
+function openModal(html){ modalContent.innerHTML = html; modalEl.classList.add('open'); }
+function closeModal(){ modalEl.classList.remove('open'); modalContent.innerHTML = ''; }
+function showImageLarge(src, title='', info=''){ openModal(`<h3>${title}</h3><img src="${src}" class="img-large"><div style="margin-top:8px">${info}</div>`); }
+
+/* ---------- Login / Logout ---------- */
+function doLogin(){
+  const user = document.getElementById('login-username').value.trim();
+  const pass = document.getElementById('login-password').value;
+  const found = DB.users.find(x => x.username === user && x.pass === pass);
+  const err = document.getElementById('login-error');
+  if(!found){ err.textContent = 'Credenciais inválidas'; return; }
+  currentUser = { id: found.id, name: found.name, role: found.role, username: found.username };
+  sessionStorage.setItem('wellhome_user', JSON.stringify(currentUser));
+  err.textContent = '';
+  onLogin();
+}
+function doLogout(){
+  if(!confirm('Deseja terminar sessão?')) return;
+  currentUser = null;
+  sessionStorage.removeItem('wellhome_user');
+  showOnlyLogin();
+}
+
+/* ---------- Render all / counts ---------- */
+function renderAll(){
+  DB = loadDB();
+  updateCounts();
+  renderFuncionarios();
+  renderClientes();
+  renderProdutos();
+  renderVendas();
+  renderOrcamentos();
+  renderRelatorios();
+  renderPayments();
+}
+
+function updateCounts(){
+  document.getElementById('count-clientes').textContent = DB.clientes.length;
+  document.getElementById('count-produtos').textContent = DB.produtos.length;
+  document.getElementById('count-vendas').textContent = DB.vendas.length;
+  document.getElementById('count-orcamentos').textContent = DB.orcamentos.length;
+}
+
+/* ---------- Dashboard ---------- */
+function renderDashboard(){
+  updateCounts();
+  renderChart();
+  renderMinStockAlerts();
+  const wrap = document.getElementById('dashboard-details');
+  if(!currentUser) { wrap.innerHTML = ''; return; }
+  if(currentUser.role === 'admin'){
+    const rows = DB.funcionarios.map(f=> {
+      const total = DB.vendas.filter(v=> v.employeeId === f.id).reduce((s,x)=>s+x.total,0);
+      return `<div style="padding:8px;border-bottom:1px solid #eee"><strong>${f.name}</strong> — Total Vendido: ${formatKz(total)}</div>`;
+    }).join('');
+    wrap.innerHTML = `<h3>Resumo por Funcionário</h3>${rows}`;
+  } else {
+    const total = DB.vendas.filter(v=> v.employeeId === currentUser.id).reduce((s,x)=>s+x.total,0);
+    wrap.innerHTML = `<h3>Suas Vendas</h3><div style="padding:8px">Total vendido: ${formatKz(total)} — Vendas: ${DB.vendas.filter(v=> v.employeeId === currentUser.id).length}</div>`;
+  }
+}
+
+/* ---------- Chart ---------- */
+function renderChart(){
+  const canvas = document.getElementById('salesChart'); if(!canvas) return;
+  const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width, canvas.height);
+  const counts = {};
+  DB.vendas.forEach(v => v.items.forEach(i => counts[i.id] = (counts[i.id]||0) + i.qty));
+  const ids = Object.keys(counts);
+  if(ids.length === 0){ ctx.font = '16px Arial'; ctx.fillStyle = '#666'; ctx.fillText('Nenhuma venda para exibir gráfico',20,40); return; }
+  const labels = ids.map(id => (DB.produtos.find(p=>p.id===id)||{}).name || id);
+  const values = ids.map(id => counts[id]);
+  const W = canvas.width, H = canvas.height, padding=60;
+  const max = Math.max(...values);
+  const barW = (W - padding*2) / labels.length * 0.6;
+  labels.forEach((lab,i)=>{
+    const val = values[i];
+    const x = padding + i * ((W - padding*2) / labels.length) + (((W - padding*2)/labels.length) - barW)/2;
+    const h = (H - padding*2) * (val / max);
+    const y = H - padding - h;
+    ctx.fillStyle = '#0b6b8a';
+    ctx.fillRect(x,y,barW,h);
+    ctx.fillStyle = '#222'; ctx.font='12px Arial';
+    ctx.fillText(lab, x, H - padding + 14);
+    ctx.fillText(String(val), x, y - 6);
+  });
+}
+
+/* ---------- Stock alerts ---------- */
+function renderMinStockAlerts(){
+  const wrap = document.getElementById('min-stock-alerts'); wrap.innerHTML = '';
+  const alerts = DB.produtos.filter(p => (p.minStock || 0) > 0 && p.stock <= p.minStock);
+  alerts.forEach(a=>{
+    const div = document.createElement('div'); div.className = 'alert';
+    div.innerHTML = `<div class="text">⚠ Produto <strong>${a.name}</strong> com stock ${a.stock} (mínimo: ${a.minStock}).</div>
+      <div><button class="btn small" onclick="gotoProduct('${a.id}')">Ir para produto</button></div>`;
+    wrap.appendChild(div);
+  });
+}
+function gotoProduct(id){ showView('produtos'); setTimeout(()=> { scrollToProductRow(id); },200); }
+function scrollToProductRow(pid){
+  const rows = document.querySelectorAll('#table-produtos tbody tr');
+  for(const r of rows){ if(r.dataset.id === pid){ r.scrollIntoView({behavior:'smooth', block:'center'}); r.style.background='#fffbec'; setTimeout(()=> r.style.background='transparent',1000); break; } }
+}
+
+/* ---------- Funcionários CRUD (image immediate update) ---------- */
+function renderFuncionarios(){
+  const q = document.getElementById('search-func').value?.toLowerCase() || '';
+  const tbody = document.querySelector('#table-func tbody'); if(!tbody) return; tbody.innerHTML = '';
+  DB.funcionarios.filter(f => (f.name + ' ' + (f.role||'') + ' ' + (f.username||'')).toLowerCase().includes(q)).forEach(f=>{
+    const sold = DB.vendas.filter(v => v.employeeId === f.id).reduce((s, v) => s + v.total, 0);
+    const tr = document.createElement('tr'); tr.dataset.id = f.id;
+    tr.innerHTML = `<td>${f.photo?`<img src="${f.photo}" class="thumbnail" onclick="showImageLarge('${f.photo}','${f.name}')">`:''}</td>
+      <td>${f.name}</td><td>${f.role}</td><td>${f.username}</td><td>${formatKz(sold)}</td>
+      <td>
+        ${currentUser && currentUser.role==='admin' ? `<button class="btn small" onclick="openFuncionarioModal('${f.id}')">Editar</button>
+        <button class="btn small" onclick="deleteFuncionario('${f.id}')">Eliminar</button>` : ''}
+        <button class="btn small" onclick="viewEmployeeSales('${f.id}')">Ver Vendas</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function openFuncionarioModal(id){
+  if(!currentUser) return alert('Faça login');
+  if(id && currentUser.role !== 'admin') return alert('Apenas administradores podem editar funcionários');
+  const f = DB.funcionarios.find(x=>x.id===id) || {};
+  openModal(`<h3>${id ? 'Editar' : 'Adicionar'} Funcionário</h3>
+    <div><label>Foto</label><div id="mf-photo-block">${f.photo?`<img src="${f.photo}" class="thumbnail" style="display:block;margin-bottom:8px">`:''}<input id="mf-photo-input" type="file" accept="image/*"></div></div>
+    <label>Nome</label><input id="mf-name" value="${f.name||''}">
+    <label>Função</label><input id="mf-role" value="${f.role||''}">
+    <label>Usuário</label><input id="mf-user" value="${f.username||''}">
+    <label>Senha</label><input id="mf-pass" type="password" placeholder="${id? 'Deixe em branco para manter' : ''}">
+    <div style="text-align:right;margin-top:8px"><button class="btn" id="mf-save">Salvar</button></div>`);
+  const inputFile = document.getElementById('mf-photo-input'); let imgBase = f.photo || null;
+  // immediate preview and replace input block
+  inputFile.addEventListener('change', (e)=> {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=> {
+      imgBase = reader.result;
+      const block = document.getElementById('mf-photo-block');
+      block.innerHTML = `<img src="${imgBase}" class="thumbnail" style="display:block;margin-bottom:8px">`;
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('mf-save').addEventListener('click', ()=>{
+    const name = document.getElementById('mf-name').value.trim();
+    const role = document.getElementById('mf-role').value.trim();
+    const username = document.getElementById('mf-user').value.trim();
+    const pass = document.getElementById('mf-pass').value.trim();
+    if(!name || !username) return alert('Preencha nome e usuário');
+    if(id){
+      const obj = DB.funcionarios.find(x=>x.id===id);
+      obj.name = name; obj.role = role; obj.username = username; if(imgBase) obj.photo = imgBase; if(pass) obj.pass = pass;
+      const u = DB.users.find(uu => uu.username === obj.username);
+      if(u){ u.name = name; if(pass) u.pass = pass; }
+    } else {
+      if(currentUser.role !== 'admin') return alert('Apenas admin pode adicionar funcionários');
+      const fid = 'f' + Date.now();
+      DB.funcionarios.push({ id:fid, name, role, username, pass: pass||'123', photo: imgBase || null });
+      DB.users.push({ id:'u'+Date.now(), name, username, pass: pass||'123', role:'vendedor' });
+    }
+    saveAndRefresh();
+    closeModal();
+    showView('funcionarios');
+  });
+}
+
+function deleteFuncionario(id){
+  if(!confirm('Eliminar funcionário?')) return;
+  DB.funcionarios = DB.funcionarios.filter(f => f.id !== id);
+  DB.users = DB.users.filter(u => u.role === 'admin' || DB.funcionarios.some(f => f.username === u.username));
+  saveAndRefresh();
+}
+
+function viewEmployeeSales(fid){
+  const emp = DB.funcionarios.find(f=>f.id===fid);
+  const sales = DB.vendas.filter(v => v.employeeId === fid);
+  openModal(`<h3>Vendas de ${emp ? emp.name : 'Funcionário'}</h3>
+    ${sales.length ? sales.map(s => `<div style="margin-bottom:8px"><strong>${s.id}</strong> — ${s.clientName} — ${formatKz(s.total)} — ${new Date(s.date).toLocaleString()}<br>Itens: ${s.items.map(it=>`${it.name} x${it.qty}`).join(', ')}</div>`).join('') : '<p>Nenhuma venda.'}`);
+}
+
+/* ---------- Clientes CRUD (image immediate update) ---------- */
+function renderClientes(){
+  const q = document.getElementById('search-cliente').value?.toLowerCase() || '';
+  const tbody = document.querySelector('#table-clientes tbody'); if(!tbody) return; tbody.innerHTML = '';
+  DB.clientes.filter(c => (c.name + ' ' + (c.phone||'') + ' ' + (c.email||'') + ' ' + (c.nif||'')).toLowerCase().includes(q)).forEach(c=>{
+    const tr = document.createElement('tr'); tr.dataset.id = c.id;
+    tr.innerHTML = `<td>${c.photo?`<img src="${c.photo}" class="thumbnail" onclick="showImageLarge('${c.photo}','${c.name}')">`:''}</td>
+      <td>${c.name}</td><td>${c.phone||''}</td><td>${c.email||''}</td><td>${c.nif||''}</td><td>${c.address||''}</td>
+      <td>
+        <button class="btn small" onclick="openClienteModal('${c.id}')">Editar</button>
+        ${currentUser && currentUser.role==='admin' ? `<button class="btn small" onclick="deleteCliente('${c.id}')">Eliminar</button>` : ''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function openClienteModal(id){
+  if(!currentUser) return alert('Faça login');
+  const c = DB.clientes.find(x=>x.id===id) || {};
+  openModal(`<h3>${id? 'Editar' : 'Adicionar'} Cliente</h3>
+    <div><label>Foto</label><div id="mc-photo-block">${c.photo?`<img src="${c.photo}" class="thumbnail" style="display:block;margin-bottom:8px">`:''}<input id="mc-photo-input" type="file" accept="image/*"></div></div>
+    <label>Nome</label><input id="mc-name" value="${c.name||''}">
+    <label>Telefone</label><input id="mc-phone" value="${c.phone||''}">
+    <label>Email</label><input id="mc-email" value="${c.email||''}">
+    <label>NIF</label><input id="mc-nif" value="${c.nif||''}">
+    <label>Endereço</label><input id="mc-address" value="${c.address||''}">
+    <div style="text-align:right;margin-top:8px"><button class="btn" id="mc-save">Salvar</button></div>`);
+  const input = document.getElementById('mc-photo-input'); let imgBase = c.photo || null;
+  input.addEventListener('change', e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=> { imgBase = r.result; const block = document.getElementById('mc-photo-block'); block.innerHTML = `<img src="${imgBase}" class="thumbnail" style="display:block;margin-bottom:8px">`; }; r.readAsDataURL(f); });
+  document.getElementById('mc-save').addEventListener('click', ()=>{
+    const name = document.getElementById('mc-name').value.trim(); if(!name) return alert('Nome obrigatório');
+    if(id){
+      const obj = DB.clientes.find(x=>x.id===id);
+      obj.name = name; obj.phone = document.getElementById('mc-phone').value; obj.email = document.getElementById('mc-email').value;
+      obj.nif = document.getElementById('mc-nif').value; obj.address = document.getElementById('mc-address').value; if(imgBase) obj.photo = imgBase;
+    } else {
+      const cid = 'c' + Date.now();
+      DB.clientes.push({ id: cid, name, phone: document.getElementById('mc-phone').value, email: document.getElementById('mc-email').value, nif: document.getElementById('mc-nif').value, address: document.getElementById('mc-address').value, photo: imgBase || null });
+    }
+    saveAndRefresh(); closeModal(); showView('clientes');
+  });
+}
+
+function deleteCliente(id){
+  if(!confirm('Eliminar cliente?')) return; DB.clientes = DB.clientes.filter(c => c.id !== id); saveAndRefresh();
+}
+
+/* ---------- Produtos CRUD (image immediate update) ---------- */
+function renderProdutos(){
+  const q = document.getElementById('search-prod').value?.toLowerCase() || '';
+  const tbody = document.querySelector('#table-produtos tbody'); if(!tbody) return; tbody.innerHTML = '';
+  DB.produtos.filter(p => (p.name + ' ' + p.code).toLowerCase().includes(q)).forEach(p=>{
+    const tr = document.createElement('tr'); tr.dataset.id = p.id;
+    tr.innerHTML = `<td>${p.photo?`<img src="${p.photo}" class="thumbnail" onclick="showImageLarge('${p.photo}','${p.name}','<strong>Preço:</strong> ${formatKz(p.price)}<br><strong>Código:</strong> ${p.code}')">`:''}</td>
+      <td>${p.code}</td><td>${p.name}</td><td>${formatKz(p.price)}</td><td>${p.stock}</td><td>${p.minStock||0}</td>
+      <td>
+        <button class="btn small" onclick="openProdutoModal('${p.id}')">Editar</button>
+        ${currentUser && currentUser.role==='admin' ? `<button class="btn small" onclick="deleteProduto('${p.id}')">Eliminar</button>` : ''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function openProdutoModal(id){
+  if(!currentUser) return alert('Faça login');
+  const p = DB.produtos.find(x=>x.id===id) || {};
+  openModal(`<h3>${id? 'Editar' : 'Adicionar'} Produto</h3>
+    <div><label>Foto</label><div id="mp-photo-block">${p.photo?`<img src="${p.photo}" class="thumbnail" style="display:block;margin-bottom:8px">`:''}<input id="mp-photo-input" type="file" accept="image/*"></div></div>
+    <label>Código</label><input id="mp-code" value="${p.code||''}">
+    <label>Nome</label><input id="mp-name" value="${p.name||''}">
+    <label>Preço (Kz)</label><input id="mp-price" type="number" value="${p.price||0}">
+    <label>Stock</label><input id="mp-stock" type="number" value="${p.stock||0}">
+    <label>Stock Mínimo</label><input id="mp-min" type="number" value="${p.minStock||0}">
+    <div style="text-align:right;margin-top:8px"><button class="btn" id="mp-save">Salvar</button></div>`);
+  const input = document.getElementById('mp-photo-input'); let imgBase = p.photo || null;
+  input.addEventListener('change', e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=> { imgBase = r.result; const block = document.getElementById('mp-photo-block'); block.innerHTML = `<img src="${imgBase}" class="thumbnail" style="display:block;margin-bottom:8px">`; }; r.readAsDataURL(f); });
+  document.getElementById('mp-save').addEventListener('click', ()=>{
+    const code = document.getElementById('mp-code').value.trim(); const name = document.getElementById('mp-name').value.trim();
+    const price = parseFloat(document.getElementById('mp-price').value) || 0; const stock = parseInt(document.getElementById('mp-stock').value) || 0; const min = parseInt(document.getElementById('mp-min').value) || 0;
+    if(!code || !name) return alert('Código e nome obrigatórios');
+    if(id){
+      const obj = DB.produtos.find(x=>x.id===id);
+      obj.code = code; obj.name = name; obj.price = price; obj.stock = stock; obj.minStock = min; if(imgBase) obj.photo = imgBase;
+    } else {
+      const pid = 'p' + Date.now();
+      DB.produtos.push({ id: pid, code, name, price, stock, minStock: min, photo: imgBase || null });
+    }
+    saveAndRefresh(); closeModal(); showView('produtos');
+  });
+}
+
+function deleteProduto(id){
+  if(!confirm('Eliminar produto?')) return; DB.produtos = DB.produtos.filter(p=>p.id!==id); saveAndRefresh();
+}
+
+/* ---------- Vendas & Orçamentos ---------- */
+function renderVendas(){
+  const q = document.getElementById('search-venda').value?.toLowerCase() || '';
+  const tbody = document.querySelector('#table-vendas tbody'); if(!tbody) return; tbody.innerHTML = '';
+  const vendas = currentUser && currentUser.role !== 'admin' ? DB.vendas.filter(v => v.employeeId === currentUser.id) : DB.vendas;
+  vendas.filter(v => (v.clientName + ' ' + v.items.map(i=>i.name).join(' ')).toLowerCase().includes(q)).forEach(v=>{
+    const tr = document.createElement('tr'); tr.dataset.id = v.id;
+    tr.innerHTML = `<td>${v.id}</td><td>${v.employeeName}</td><td>${v.clientName}</td><td>${v.items.length} item(s)</td><td>${formatKz(v.total)}</td><td>${v.paid? 'Sim':'Não'}</td><td>${new Date(v.date).toLocaleString()}</td>
+      <td>
+        <button class="btn small" onclick="viewSale('${v.id}')">Ver</button>
+        ${currentUser && currentUser.role==='admin' ? `<button class="btn small" onclick="togglePaid('${v.id}')">${v.paid? 'Marcar Não Pago':'Marcar Pago'}</button>` : ''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderOrcamentos(){
+  const q = document.getElementById('search-quote').value?.toLowerCase() || '';
+  const tbody = document.querySelector('#table-orcamentos tbody'); if(!tbody) return; tbody.innerHTML = '';
+  const orcs = currentUser && currentUser.role !== 'admin' ? DB.orcamentos.filter(o => o.employeeId === currentUser.id) : DB.orcamentos;
+  orcs.filter(o => (o.clientName + ' ' + o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q)).forEach(o=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${o.id}</td><td>${o.employeeName}</td><td>${o.employeeRole || ''}</td><td>${o.clientName}</td><td>${o.items.length} item(s)</td><td>${formatKz(o.total)}</td><td>${new Date(o.date).toLocaleDateString()}</td>
+      <td>
+        <button class="btn small" onclick="viewQuote('${o.id}')">Ver</button>
+        ${currentUser && currentUser.role === 'admin' ? `<button class="btn small" onclick="convertQuote('${o.id}')">Converter</button>` : ''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function openSaleChoiceModal(){
+  if(!currentUser) return alert('Faça login');
+  openModal(`<h3>Nova Venda / Orçamento</h3><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="choice-sale">Criar Venda</button><button class="btn" id="choice-quote">Criar Orçamento</button></div>`);
+  document.getElementById('choice-sale').addEventListener('click', ()=>{ closeModal(); openSaleForm(false); });
+  document.getElementById('choice-quote').addEventListener('click', ()=>{ closeModal(); openSaleForm(true); });
+}
+
+function openSaleForm(asQuote){
+  if(!currentUser) return alert('Faça login');
+  const employeesOptions = DB.funcionarios.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+  const clientsOptions = DB.clientes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const productsOptions = DB.produtos.map(p => `<option value="${p.id}">${p.name} (stock: ${p.stock})</option>`).join('');
+  openModal(`
+    <h3>${asQuote ? 'Novo Orçamento' : 'Nova Venda'}</h3>
+    ${currentUser.role === 'admin' ? `<label>Funcionário</label><select id="sf-employee">${employeesOptions}</select>` : `<input type="hidden" id="sf-employee" value="${currentUser.id}">`}
+    <label>Cliente</label><select id="sf-client"><option value="">-- Selecionar --</option>${clientsOptions}</select>
+    <label>Produto</label><select id="sf-product">${productsOptions}</select>
+    <label>Quantidade</label><input id="sf-qty" type="number" value="1" min="1">
+    <div style="margin-top:8px"><button class="btn" id="sf-add">Adicionar Item</button></div>
+    <div id="sf-items" style="margin-top:8px"></div>
+    <div style="text-align:right;margin-top:8px"><button class="btn" id="sf-save">${asQuote ? 'Salvar Orçamento' : 'Efetuar Venda'}</button></div>
+  `);
+  const items = [];
+  document.getElementById('sf-add').addEventListener('click', ()=>{
+    const pid = document.getElementById('sf-product').value; const qty = Math.max(1, parseInt(document.getElementById('sf-qty').value) || 1);
+    const prod = DB.produtos.find(p=>p.id===pid); if(!prod) return alert('Produto inválido');
+    if(prod.stock < qty && !confirm(`Stock insuficiente (${prod.stock}). Deseja adicionar mesmo assim?`)) return;
+    items.push({ id: prod.id, name: prod.name, price: prod.price, qty });
+    renderSaleItems();
+  });
+  function renderSaleItems(){
+    const wrap = document.getElementById('sf-items');
+    if(items.length===0) { wrap.innerHTML = '<p>Nenhum item.</p>'; return; }
+    wrap.innerHTML = `<ul>${items.map((it,i)=>`<li>${it.name} x ${it.qty} — ${formatKz(it.price)} <button class="btn small" onclick="window._removeItem(${i})">Remover</button></li>`).join('')}</ul>
+      <p>Total: <strong>${formatKz(items.reduce((s,it)=>s + it.price*it.qty,0))}</strong></p>`;
+    window._removeItem = function(i){ items.splice(i,1); renderSaleItems(); };
+  }
+  document.getElementById('sf-save').addEventListener('click', ()=>{
+    if(items.length===0) return alert('Adicione pelo menos 1 item');
+    const employeeId = document.getElementById('sf-employee') ? document.getElementById('sf-employee').value : currentUser.id;
+    const employee = DB.funcionarios.find(f=>f.id===employeeId);
+    const clientId = document.getElementById('sf-client').value;
+    const client = DB.clientes.find(c=>c.id===clientId) || { name: 'Consumidor' };
+    const total = items.reduce((s,it)=>s + it.price*it.qty,0);
+    if(asQuote){
+      const orc = { id: 'Q' + Date.now(), employeeId, employeeName: employee?employee.name:'', employeeRole: employee?employee.role:'', clientId, clientName: client.name, items: JSON.parse(JSON.stringify(items)), total, date: new Date().toISOString() };
+      DB.orcamentos.push(orc);
+    } else {
+      const sale = { id: 'S' + Date.now(), employeeId, employeeName: employee?employee.name:'', clientId, clientName: client.name, items: JSON.parse(JSON.stringify(items)), total, paid: false, date: new Date().toISOString() };
+      DB.vendas.push(sale);
+      sale.items.forEach(it=> { const p = DB.produtos.find(pp=>pp.id === it.id); if(p) p.stock = Math.max(0, p.stock - it.qty); });
+    }
+    saveAndRefresh(); closeModal(); showView('vendas');
+  });
+  renderSaleItems();
+}
+
+function viewSale(id){
+  const v = DB.vendas.find(x=>x.id===id); if(!v) return alert('Venda não encontrada');
+  openModal(`<h3>Venda ${v.id}</h3>
+    <p><strong>Funcionário:</strong> ${v.employeeName}</p><p><strong>Cliente:</strong> ${v.clientName}</p>
+    <p><strong>Itens:</strong></p><ul>${v.items.map(it=>`<li>${it.name} x ${it.qty} — ${formatKz(it.price)}</li>`).join('')}</ul>
+    <p><strong>Total:</strong> ${formatKz(v.total)}</p>
+    <p><strong>Pago:</strong> ${v.paid ? 'Sim' : 'Não'}</p>
+    <p><small>${new Date(v.date).toLocaleString()}</small></p>`);
+}
+
+function viewQuote(id){
+  const o = DB.orcamentos.find(x=>x.id===id); if(!o) return alert('Orçamento não encontrado');
+  openModal(`<h3>Orçamento ${o.id}</h3><p><strong>Funcionário:</strong> ${o.employeeName} ${currentUser && currentUser.role==='admin' ? '— Função: ' + (o.employeeRole || '') : ''}</p>
+    <p><strong>Cliente:</strong> ${o.clientName}</p>
+    <p>Itens:</p><ul>${o.items.map(it=>`<li>${it.name} x ${it.qty} — ${formatKz(it.price)}</li>`).join('')}</ul>
+    <p><strong>Total:</strong> ${formatKz(o.total)}</p>
+    <div style="text-align:right">${currentUser && currentUser.role==='admin' ? `<button class="btn" onclick="convertQuote('${o.id}')">Converter em Venda</button>` : ''}</div>`);
+}
+
+function convertQuote(id){
+  const o = DB.orcamentos.find(x=>x.id===id); if(!o) return alert('Orçamento não encontrado');
+  const insufficient = o.items.some(it => { const p = DB.produtos.find(pp=>pp.id===it.id); return !p || p.stock < it.qty; });
+  if(insufficient && !confirm('Existem produtos com stock insuficiente. Continuar?')) return;
+  const sale = { id: 'S' + Date.now(), employeeId: o.employeeId, employeeName: o.employeeName, clientId: o.clientId, clientName: o.clientName, items: JSON.parse(JSON.stringify(o.items)), total: o.total, paid: false, date: new Date().toISOString() };
+  DB.vendas.push(sale);
+  sale.items.forEach(it => { const p = DB.produtos.find(pp=>pp.id === it.id); if(p) p.stock = Math.max(0, p.stock - it.qty); });
+  DB.orcamentos = DB.orcamentos.filter(q => q.id !== id);
+  saveAndRefresh(); closeModal(); showView('vendas');
+}
+
+function togglePaid(id){ const v = DB.vendas.find(x=>x.id===id); if(!v) return; v.paid = !v.paid; saveAndRefresh(); }
+
+/* ---------- Relatórios ---------- */
+function renderRelatorios(){
+  const sel = document.getElementById('report-employee'); if(!sel) return;
+  sel.innerHTML = `<option value="">Todos funcionários</option>` + DB.funcionarios.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+  sel.onchange = () => generateReport(sel.value);
+  generateReport('');
+}
+function generateReport(filterEmployeeId){
+  const container = document.getElementById('report-list'); if(!container) return;
+  const agg = {};
+  DB.vendas.filter(v => !filterEmployeeId || v.employeeId === filterEmployeeId).forEach(v=>{
+    v.items.forEach(it=>{
+      if(!agg[it.id]) agg[it.id] = { id: it.id, name: it.name, qty: 0, revenue: 0, photo: (DB.produtos.find(p=>p.id===it.id)||{}).photo || null, code: (DB.produtos.find(p=>p.id===it.id)||{}).code || '' };
+      agg[it.id].qty += it.qty; agg[it.id].revenue += it.price * it.qty;
+    });
+  });
+  const items = Object.values(agg).sort((a,b)=>b.qty - a.qty);
+  if(items.length === 0){ container.innerHTML = '<p>Nenhuma venda para o critério.</p>'; return; }
+  container.innerHTML = items.map(it => `
+    <div class="view" style="display:flex;gap:12px;align-items:center;">
+      <div style="width:140px">${it.photo? `<img src="${it.photo}" class="img-large" style="width:120px;height:80px;object-fit:cover;border-radius:8px" onclick="showImageLarge('${it.photo}','${it.name}','<strong>Código:</strong> ${it.code}<br><strong>Quantidade vendida:</strong> ${it.qty}<br><strong>Receita:</strong> ${formatKz(it.revenue)}')">` : '<div style="width:120px;height:80px;background:#f1f3f5;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#999">Sem foto</div>'}</div>
+      <div style="flex:1">
+        <h3 style="margin:0 0 6px">${it.name} <span class="small-muted">(${it.code})</span></h3>
+        <div class="small-muted">Quantidade vendida: ${it.qty} — Receita: ${formatKz(it.revenue)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---------- Pagamentos ---------- */
+function renderPayments(){
+  const wrap = document.getElementById('payments-list'); if(!wrap) return;
+  wrap.innerHTML = '';
+  DB.vendas.forEach(v=>{
+    const div = document.createElement('div'); div.className = 'view'; div.style.marginBottom = '8px';
+    div.innerHTML = `<strong>${v.clientName}</strong> — ${formatKz(v.total)} — Pago: ${v.paid? 'Sim':'Não'} <br/><small>${v.employeeName} • ${new Date(v.date).toLocaleString()}</small><br/>`;
+    if(currentUser && currentUser.role === 'admin'){
+      const sel = document.createElement('select');
+      sel.innerHTML = `<option value="false" ${!v.paid? 'selected':''}>Pendente</option><option value="true" ${v.paid? 'selected':''}>Pago</option>`;
+      sel.onchange = ()=> { v.paid = sel.value === 'true'; saveAndRefresh(); };
+      div.appendChild(sel);
+    }
+    wrap.appendChild(div);
+  });
+}
+
+/* ---------- Export CSV ---------- */
+function exportSalesCSV(){
+  if(DB.vendas.length === 0) return alert('Sem vendas para exportar');
+  const rows = [['ID','Funcionário','Cliente','Itens','Total (Kz)','Pago','Data']];
+  DB.vendas.forEach(v => rows.push([v.id, v.employeeName, v.clientName, v.items.map(i=>i.name + ' x' + i.qty).join('; '), v.total, v.paid ? 'Sim' : 'Não', v.date]));
+  const csv = rows.map(r=> r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'vendas.csv'; a.click(); URL.revokeObjectURL(url);
+}
+
+/* ---------- Utilities ---------- */
+function formatKz(n){ return new Intl.NumberFormat('pt-PT').format(n) + ' Kz'; }
+
+function saveAndRefresh(){
+  saveDB_local(DB);
+  // trigger other tabs
+  localStorage.setItem(DB_KEY + '_sync', Date.now());
+  // re-render current tab immediately
+  renderAll();
+}
+
+/* ---------- Start ---------- */
+init();
+renderAll();
+showView('dashboard');
+
+</script>
+</body>
+</html>
